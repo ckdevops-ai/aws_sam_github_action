@@ -1,0 +1,41 @@
+name: Deploy SAM App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # 必须启用 OIDC
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install AWS SAM CLI
+        run: pip install aws-sam-cli
+
+      - name: Configure AWS Credentials (via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::723580626936:user/sam-deploy-user  # ← 替换为你的角色 ARN
+          aws-region: ap-southeast-1  # 可改为 ap-southeast-1 等
+
+      - name: Build SAM Application
+        run: sam build
+
+      - name: Deploy to AWS
+        run: |
+          sam deploy \
+            --stack-name simple-sam-github-stack \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --region ap-southeast-1
